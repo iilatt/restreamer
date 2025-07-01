@@ -1,0 +1,224 @@
+#live-header {
+	flex-shrink: 0;
+	height: 44px;
+	display: flex; justify-content: space-between; align-items: center;
+}
+
+#live-parent {
+	flex-shrink: 1;
+	height: 100%; min-height: 0;
+	position: relative;
+	display: flex; justify-content: center; align-items: center;
+	background-color: var(--color-nav);
+	border-bottom: 2px solid var(--color-hover);
+	border-top: 2px solid var(--color-hover);
+
+	#live-video {
+		width: 100%; height: 100%;
+	}
+
+	#live-loading {
+		position: absolute; left: 0; top: 0;
+		width: 100%; height: 100%;
+		display: flex; justify-content: center; align-items: center;
+		background-color: #00000080;
+		border-radius: 10px;
+	}
+
+	#live-start {
+		width: 70px; height: 70px;
+		position: absolute; left: 50%; top: 50%;
+		transform: translate(-50%, -50%);
+		display: flex; justify-content: center; align-items: center;
+		border-radius: 20px;
+		background-color: var(--color-nav);
+		border: 4px solid var(--color-accent);
+
+		svg {
+			height: 30px;
+		}
+	}
+}
+
+#live-controls {
+	position: relative;
+	flex-shrink: 0;
+	width: 100%; height: 44px;
+	display: flex; justify-content: space-between; align-items: center; gap: 5px;
+
+	.volume {
+		display: flex; align-items: center; gap: 4px;
+		height: 100%;
+	}
+	
+	> .left, > .right {
+		display: flex; align-items: center;
+		height: 100%;
+	}
+
+	.square {
+		width: 44px;
+		padding: 0;
+	}
+
+	#live-volume-input {
+		-webkit-appearance: none;
+		appearance: none;
+		height: 14px;
+		outline: none;
+		overflow: hidden;
+
+		&::-webkit-slider-runnable-track {
+			height: 14px;
+			background: var(--color-hover);
+		}
+
+		&::-moz-range-track {
+			height: 14px;
+			background: var(--color-hover);
+		}
+
+		&::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			appearance: none;
+			width: 14px; height: 14px;
+			background-color: #fff;
+			border: 2px solid var(--color-accent);
+			box-shadow: -407px 0 0 400px var(--color-accent);
+		}
+
+		&::-moz-range-thumb {
+			width: 14px; height: 14px;
+			background-color: #fff;
+			border: 2px solid var(--color-accent);
+			box-shadow: -407px 0 0 400px var(--color-accent);
+		}
+	}
+
+	#live-settings-panel {
+		position: absolute; bottom: 100%; right: 66px;
+		transform: translateX(50%);
+		display: flex; flex-direction: column;
+		background: var(--color-nav);
+		border: 2px solid var(--color-border);
+	}
+}
+
+#live-chat-header {
+	flex-shrink: 0;
+	height: 44px;
+	display: flex; justify-content: space-between; align-items: center;
+
+	#live-chat-modes {
+		height: 100%;
+		display: flex;
+	}
+
+	.viewers {
+		gap: 4px;
+
+		svg {
+			color: var(--color-accent);
+			height: 20px;
+		}
+	}
+}
+
+#live-chat {
+	position: relative;
+	display: flex; flex-direction: column; gap: 5px; flex-grow: 1;
+	overflow-y: auto;
+	border-top: 2px solid var(--color-hover);
+	border-bottom: 2px solid var(--color-hover);
+
+	#no-messages {
+		position: absolute; left: 50%; top: 50%;
+		transform: translate(-50%, -50%);
+		display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 10px;
+		text-align: center;
+		font-weight: 500;
+		color: var(--color-border);
+		user-select: none;
+		padding: 20px;
+		cursor: pointer;
+
+		svg {
+			height: 40px;
+		}
+	}
+
+	.message {
+		position: relative;
+		word-break: break-word;
+		border-radius: 8px;
+		padding: 2px 5px;
+		animation: 100ms show;
+
+		&.tip {
+			display: flex; align-items: center;
+			background-color: var(--color-nav);
+			padding: 5px;
+			flex-wrap: nowrap;
+		}
+
+		> .user {
+			display: inline-flex; justify-content: center; align-items: center; gap: 8px;
+			padding: 0 5px 0 0;
+			border: 0;
+			vertical-align: middle;
+			margin-right: 5px;
+
+			> .avatar {
+				width: 30px; height: 30px;
+				border-radius: 5px;
+			}
+		}
+
+		.content {
+			display: inline;
+			vertical-align: middle;
+			flex-grow: 1;
+		}
+
+		&:hover > .report {
+			opacity: 1;
+		}
+
+		> .amount {
+			display: flex; justify-content: center; align-items: center; gap: 5px;
+			background-color: var(--color-nav);
+			border: 1px solid var(--color-accent);
+			padding: 5px 8px;
+			border-radius: 5px;
+			flex-shrink: 0;
+		}
+
+		> .report {
+			width: 30px; height: 30px;
+			display: flex; justify-content: center; align-items: center;
+			position: absolute; bottom: 0; right: 0;
+			color: var(--color-svg);
+			border: 0;
+			padding: 0;
+			opacity: 0;
+			transition: opacity 100ms;
+		}
+	}
+}
+
+#live-chat-form {
+	height: 44px;
+	display: flex;
+	flex-shrink: 0;
+
+	#live-chat-input {
+		flex-grow: 1;
+		padding: 0 10px;
+	}
+
+	#live-chat-submit {
+		width: 40px;
+		display: flex; justify-content: center; align-items: center;
+		padding: 0;
+	}
+}

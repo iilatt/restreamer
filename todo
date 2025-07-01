@@ -1,0 +1,10 @@
+fatal MediaStream error modal
+
+config:
+	app_name, app_desc, app_url, support_url
+	twitch_auth, twitch_name, twitch_url, twitch_qualities
+	kick_name, kick_url, kick_qualities
+
+default files
+	favicon.ico
+	icon.png

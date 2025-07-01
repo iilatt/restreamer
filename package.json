@@ -1,0 +1,6 @@
+{
+	"type": "module",
+	"dependencies": {
+		"uWebSockets.js": "git+https://github.com/uNetworking/uWebSockets.js#v20.52.0"
+	}
+}

@@ -1,0 +1,6 @@
+node_modules/
+temp/
+static/app.html
+static/favicon.ico
+streamlink_twitch_oauth
+streamlink_url
