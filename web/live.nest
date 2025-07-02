@@ -56,11 +56,6 @@
 		height: 100%;
 	}
 
-	.square {
-		width: 44px;
-		padding: 0;
-	}
-
 	#live-volume-input {
 		-webkit-appearance: none;
 		appearance: none;
@@ -126,10 +121,11 @@
 
 #live-chat {
 	position: relative;
-	display: flex; flex-direction: column; gap: 5px; flex-grow: 1;
+	display: flex; flex-direction: column; flex-grow: 1;
 	overflow-y: auto;
 	border-top: 2px solid var(--color-hover);
 	border-bottom: 2px solid var(--color-hover);
+	padding: 8px;
 
 	#no-messages {
 		position: absolute; left: 50%; top: 50%;
@@ -153,6 +149,8 @@
 		border-radius: 8px;
 		padding: 2px 5px;
 		animation: 100ms show;
+		line-height: 1.5;
+		font-size: 15px;
 
 		&.tip {
 			display: flex; align-items: center;
@@ -163,10 +161,6 @@
 
 		> .user {
 			display: inline-flex; justify-content: center; align-items: center; gap: 8px;
-			padding: 0 5px 0 0;
-			border: 0;
-			vertical-align: middle;
-			margin-right: 5px;
 
 			> .avatar {
 				width: 30px; height: 30px;
@@ -176,8 +170,13 @@
 
 		.content {
 			display: inline;
-			vertical-align: middle;
 			flex-grow: 1;
+
+			.emote {
+				display: inline;
+				width: 28px; height: 28px;
+				vertical-align: middle;
+			}
 		}
 
 		&:hover > .report {

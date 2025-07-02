@@ -14,52 +14,57 @@ function set_disabled(element, disabled) {
 	}
 }
 
-function fade_in(element) {
-	if (element.style.display == '') {
-		return;
+function make_modal(name, has_close) {
+	const modal = {};
+	const modal_bg = elem_create_div();
+	elem_set_id(modal_bg, `${name}-modal-bg`);
+	elem_class_add(modal_bg, `modal-bg`);
+	if (has_close) {
+		elem_class_add(modal_bg, `close`);
 	}
-	set_visible(element, true);
-	const start_time = Date.now();
-	function update() {
-		const moment = Math.min((Date.now() - start_time) / 100, 1);
-		element.style.opacity = moment;
-		if (moment >= 1) {
-			clearInterval(interval);
-		}
+	const modal_border = elem_create_div();
+	elem_set_id(modal_border, `${name}-modal-border`);
+	elem_class_add(modal_border, 'modal-border');
+	elem_append(modal_bg, modal_border);
+	const modal_content = elem_create_div();
+	elem_set_id(modal_content, `${name}-modal`);
+	elem_class_add(modal_content, `modal`);
+	elem_append(modal_border, modal_content);
+	modal.content = modal_content;
+	if (has_close) {
+		const close_button = elem_create(`button`);
+		elem_append(modal_content, close_button);
+		modal_bg.close_button = close_button;
+		elem_class_add(close_button, `icon-btn`, `modal-close`);
+		const icon_svg = elem_create_html(`<svg viewBox="0 -960 960 960"><path d="M480-437.85 277.08-234.92q-8.31 8.3-20.89 8.5-12.57.19-21.27-8.5-8.69-8.7-8.69-21.08 0-12.38 8.69-21.08L437.85-480 234.92-682.92q-8.3-8.31-8.5-20.89-.19-12.57 8.5-21.27 8.7-8.69 21.08-8.69 12.38 0 21.08 8.69L480-522.15l202.92-202.93q8.31-8.3 20.89-8.5 12.57-.19 21.27 8.5 8.69 8.7 8.69 21.08 0 12.38-8.69 21.08L522.15-480l202.93 202.92q8.3 8.31 8.5 20.89.19 12.57-8.5 21.27-8.7 8.69-21.08 8.69-12.38 0-21.08-8.69L480-437.85Z"/></svg>`);
+		elem_append(close_button, icon_svg);
 	}
-	const interval = setInterval(update, 0);
-	update();
-}
-
-function fade_out(element) {
-	if (element.style.display == 'none') {
-		return;
+	modal.show = function() {
+		elem_append(document.body, modal_bg);
+		fade_in(modal_bg);
+	};
+	modal.hide = function() {
+		fade_out(modal_bg, () => {
+			elem_remove(modal_bg);
+		});
+	};
+	if (has_close) {
+		add_event(modal_bg.close_button, `click`, () => {
+			modal.hide();
+		});
+		add_event(modal_bg, `mousedown`, event => {
+			if (event.target === modal_bg) {
+				modal_bg.mouse_down = true;
+			}
+		});
+		add_event(modal_bg, `mouseup`, event => {
+			if (modal_bg.mouse_down && event.target === event.currentTarget) {
+				modal.hide();
+			}
+			modal_bg.mouse_down = false;
+		});
 	}
-	const start_time = Date.now();
-	function update() {
-		const moment = Math.max(1 - ((Date.now() - start_time) / 100), 0);
-		element.style.opacity = moment;
-		if (moment <= 0) {
-			set_visible(element, false);
-			clearInterval(interval);
-		}
-	}
-	const interval = setInterval(update, 0);
-	update();
-}
-
-function init_modal_close_events(modal) {
-	modal.addEventListener('mousedown', event => {
-		if (event.target === modal) {
-			modal.mouse_down = true;
-		}
-	});
-	modal.addEventListener('mouseup', event => {
-		if (modal.mouse_down && event.target === event.currentTarget) {
-			fade_out(modal);
-		}
-		modal.mouse_down = false;
-	});
+	return modal;
 }
 
 function generate_id(length) {
@@ -89,20 +94,65 @@ function make_badges(badges, parent) {
 }
 
 let ws;
+let token_modal;
+
+function make_token_modal() {
+	const modal = make_modal('token', true);
+	const foo1 = elem_create_html(`<span class="modal-title">Chat Token</span>`);
+	const foo2 = elem_create_html(`<span class="subtext">To send messages in Chat you will need to provide a Token.</span>`);
+	const foo3 = elem_create_html(`<span>Drag the below button on to your Bookmarks Bar or copy the link and add it as a Bookmark manually. Then click the Bookmark once and follow the instructions on screen.</span>`);
+	const bookmark_code = encodeURIComponent("if (window.location.host.includes(`kick.com`)) {window.location.replace(`%APP_URL%#kick_token=${document.cookie.split(`;`).map(cookie => cookie.trim()).find(cookie => cookie.startsWith('session_token')).substring(14)}`)} else {window.alert(`You will now be redirected to Kick.com to login.\nAfter the page loads click on this bookmark again.`);window.location.replace(`https://kick.com`)}");
+	const foo4 = elem_create_html(`<div class="bookmark"><a href="javascript:(function(){${bookmark_code}})();" class="link">Kick Login</a><span>← drag this button to your Bookmarks Bar.</span></div>`);
+	// const foo5 = elem_create_html(`<form id="modal-token-form" class="modal-form">
+	// 	<div class="modal-part">
+	// 		<span class="subtext">If you already have a token you can paste it here:</span>
+	// 		<div class="input-field">
+	// 			<input id="foobar" minlength="3" maxlength="16">
+	// 			<span class="label">Kick Token</span>
+	// 		</div>
+	// 	</div>
+	// </form>`);
+	elem_append(modal.content, foo1);
+	elem_append(modal.content, foo2);
+	elem_append(modal.content, foo3);
+	elem_append(modal.content, foo4);
+	// elem_append(modal.content, foo5);
+	const bookmark_explain = query('#bookmark-explain');
+	const bookmarks = modal.content.querySelectorAll('.bookmark > .link');
+	bookmarks.forEach(bookmark => {
+		bookmark.addEventListener('click', event => {
+			event.preventDefault();
+		});
+		bookmark.addEventListener('mouseenter', () => {
+			bookmark_explain.classList.add('hover-active');
+		});
+		bookmark.addEventListener('mouseleave', () => {
+			bookmark_explain.classList.remove('hover-active');
+		});
+		bookmark.addEventListener('dragstart', event => {
+			event.dataTransfer.setDragImage(bookmark, bookmark.getBoundingClientRect().width / 2, bookmark.getBoundingClientRect().height / 2);
+			bookmark_explain.classList.add('drag-active');
+		});
+		bookmark.addEventListener('dragend', () => {
+			bookmark_explain.classList.remove('drag-active');
+		});
+	});
+	return modal;
+}
 
 function main() {
+	const hash_params = new URLSearchParams(window.location.hash.substring(1));
+	const kick_token = hash_params.get('kick_token');
+	if (kick_token) {
+		localStorage.kick_token = kick_token;
+		window.history.replaceState({}, '', window.location.pathname);
+	}
 	ws = new WebSocket(location.origin.replace('http', 'ws'));
-	ws.onopen = () => {
-		ws.send(JSON.stringify({
-			type: 'set_quality',
-			value: localStorage.live_quality,
-		}));
-	};
 	ws.onmessage = event => {
 		if (typeof(event.data) === 'string') {
 			const json = JSON.parse(event.data);
 			if (json.type == 'live_reset') {
-				on_join_live();
+				player_reset();
 			} else if (json.type == 'user_count') {
 				update_viewer_count(json.count);
 			}
@@ -113,7 +163,7 @@ function main() {
 		}
 	};
 	ws.onclose = () => {
-		fade_in(query('#panel-disconnect-bg'));
+		fade_in(query('#modal-disconnect-bg'));
 	};
 
 	const input_fields = query_all('.input-field');
@@ -156,28 +206,13 @@ function main() {
 		});
 	});
 
-	const bookmark_explain = query('#bookmark-explain');
-	const bookmarks = query_all('.bookmark > .link');
-	bookmarks.forEach(bookmark => {
-		bookmark.addEventListener('click', event => {
-			event.preventDefault();
-		});
-		bookmark.addEventListener('mouseenter', () => {
-			bookmark_explain.classList.add('hover-active');
-		});
-		bookmark.addEventListener('mouseleave', () => {
-			bookmark_explain.classList.remove('hover-active');
-		});
-		bookmark.addEventListener('dragstart', event => {
-			event.dataTransfer.setDragImage(bookmark, bookmark.getBoundingClientRect().width / 2, bookmark.getBoundingClientRect().height / 2);
-			bookmark_explain.classList.add('drag-active');
-		});
-		bookmark.addEventListener('dragend', () => {
-			bookmark_explain.classList.remove('drag-active');
-		});
-	});
-
+	token_modal = make_token_modal();
 	init_live();
+	init_chat();
+
+	query('#reload-button').addEventListener('click', () => {
+		location.reload();
+	});
 
 	const chat_modes = query_all('.chat-mode');
 	chat_modes.forEach(chat_mode => {

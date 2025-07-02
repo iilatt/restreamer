@@ -1,4 +1,5 @@
-import { is_dev, lives } from './main.js';
+import { is_dev, kick_channel_id, lives } from './main.js';
+import { respond400 } from './req_utils.js';
 
 export const websockets = [];
 
@@ -51,9 +52,27 @@ export function on_ws_message(ws, message, is_binary) {
 		ws.send(JSON.stringify({
 			type: 'live_reset'
 		}), false);
-		if (lives[ws.quality].init_seg_done) {
+		if (lives[ws.quality].init_seg) {
 			ws.send(lives[ws.quality].init_seg, true);
 		}
+		if (lives[ws.quality].last_seg) {
+			ws.send(lives[ws.quality].last_seg, true);
+		}
+	} else if (json.type === 'send_message') {
+		fetch(`https://kick.com/api/v2/messages/send/${kick_channel_id}`, {
+			headers: {
+				'authorization': `Bearer ${json.auth}`,
+				'accept': 'application/json',
+				'content-type': 'application/json',
+				'origin': 'https://kick.com',
+			},
+			method: 'POST',
+			body: JSON.stringify({
+				content: json.content,
+				type: 'message',
+				message_ref: Date.now(),
+			}),
+		});
 	}
 }
 

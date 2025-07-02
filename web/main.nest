@@ -36,10 +36,8 @@ input {
 	accent-color: var(--color-accent);
 }
 
-button, .btn {
-	height: 100%;
+button, .wide {
 	display: flex; justify-content: center; align-items: center; gap: 8px;
-	padding: 0 10px;
 	border-radius: 0;
 	color: inherit;
 	font-weight: 500;
@@ -53,6 +51,16 @@ button, .btn {
 	&.active {
 		background-color: var(--color-active) !important;
 	}
+}
+
+.square {
+	height: 100%;
+	width: 44px;
+}
+
+.wide {
+	height: 100%;
+	padding: 0 10px;
 }
 
 .badge {
@@ -307,7 +315,7 @@ button, .btn {
 	}
 }
 
-#modal-token {
+#token-modal-border {
 	max-width: 600px;
 }
 

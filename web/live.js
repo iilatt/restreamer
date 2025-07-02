@@ -1,53 +1,51 @@
 let chunks = [];
+let media_source;
 let source_buffer;
-let media_stream;
 let live_video;
 let live_video_start;
 let live_video_pause;
 
 const mime_type = 'video/mp4; codecs="avc1.640028, mp4a.40.2"';
 
-function append_chunks() {
-	while (source_buffer && chunks.length > 0 && !source_buffer.updating) {
-		source_buffer.appendBuffer(chunks.shift());
+function new_live_video_data(ab) {
+	if (source_buffer && !source_buffer.updating && chunks.length === 0) {
+		source_buffer.appendBuffer(ab);
+	} else {
+		chunks.push(ab);
 	}
 }
 
-function new_live_video_data(ab) {
-	chunks.push(ab);
-	append_chunks();
-}
-
-function add_live_message(data) {
+function add_live_message(user_name_str, user_color_str, content_html_str) {
 	fade_out(query('#no-messages'));
 	const message = document.createElement('div');
 	message.classList.add('message');
 	const user_button = document.createElement('button');
-	const avatar_img = document.createElement('img');
-	avatar_img.classList.add('avatar');
-	avatar_img.src = get_avatar_url(data.id);
+	// const avatar_img = document.createElement('img');
+	// avatar_img.classList.add('avatar');
+	// avatar_img.src = get_avatar_url(data.id);
 	const user_name = document.createElement('span');
-	user_name.innerText = data.name;
+	user_name.innerText = user_name_str;
+	user_name.style.color = user_color_str;
 	user_button.addEventListener('click', () => {
-		open_otheruser_panel();
+		window.open(`https://kick.com/${user_name_str}`, '_blank');
 	});
 	user_button.classList.add('user');
-	user_button.appendChild(avatar_img);
+	// user_button.appendChild(avatar_img);
 	user_button.appendChild(user_name);
-	make_badges(data.badges, user_button);
+	// make_badges(data.badges, user_button);
 	message.appendChild(user_button);
 	const content_element = document.createElement('div');
 	content_element.classList.add('content');
-	content_element.innerText = data.content;
+	content_element.innerHTML = `: ${content_html_str}`;
 	message.appendChild(content_element);
-	const report_button = document.createElement('button');
-	report_button.addEventListener('click', () => {
-		confirm('Are you sure you want to report this message?');
-	});
-	report_button.classList.add('report');
-	report_button.title = 'Report';
-	report_button.innerHTML = '<svg viewBox="0 0 448 512"><path d="M64 32C64 14.3 49.7 0 32 0S0 14.3 0 32V64 368 480c0 17.7 14.3 32 32 32s32-14.3 32-32V352l64.3-16.1c41.1-10.3 84.6-5.5 122.5 13.4c44.2 22.1 95.5 24.8 141.7 7.4l34.7-13c12.5-4.7 20.8-16.6 20.8-30V66.1c0-23-24.2-38-44.8-27.7l-9.6 4.8c-46.3 23.2-100.8 23.2-147.1 0c-35.1-17.6-75.4-22-113.5-12.5L64 48V32z"/></svg>';
-	message.appendChild(report_button);
+	// const report_button = document.createElement('button');
+	// report_button.addEventListener('click', () => {
+	// 	confirm('Are you sure you want to report this message?');
+	// });
+	// report_button.classList.add('report');
+	// report_button.title = 'Report';
+	// report_button.innerHTML = '<svg viewBox="0 0 448 512"><path d="M64 32C64 14.3 49.7 0 32 0S0 14.3 0 32V64 368 480c0 17.7 14.3 32 32 32s32-14.3 32-32V352l64.3-16.1c41.1-10.3 84.6-5.5 122.5 13.4c44.2 22.1 95.5 24.8 141.7 7.4l34.7-13c12.5-4.7 20.8-16.6 20.8-30V66.1c0-23-24.2-38-44.8-27.7l-9.6 4.8c-46.3 23.2-100.8 23.2-147.1 0c-35.1-17.6-75.4-22-113.5-12.5L64 48V32z"/></svg>';
+	// message.appendChild(report_button);
 	const chat = query('#live-chat');
 	const scrolled = chat.scrollTop === chat.scrollHeight - chat.clientHeight;
 	chat.appendChild(message);
@@ -64,42 +62,63 @@ async function set_live_video_paused(new_paused) {
 	if (new_paused) {
 		live_video.pause();
 	} else {
-		if (source_buffer && source_buffer.buffered.length > 0) {
-			live_video.currentTime = source_buffer.buffered.end(0) - 3;
+		if (ws.readyState === WebSocket.OPEN) {
+			ws.send(JSON.stringify({
+				type: 'set_quality',
+				value: localStorage.live_quality,
+			}));
 		}
-		await live_video.play();
+		live_video.play();
 	}
 }
 
-function on_join_live() {
-	chunks = [];
-	const media_source = new MediaSource();
-	live_video.src = URL.createObjectURL(media_source);
-	if (source_buffer) {
-		live_video.play();
-	}
+let player_state = 'pause';
+function init_player() {
+	media_source = new MediaSource();
 	source_buffer = null;
-	let media_init;
 	media_source.addEventListener('sourceopen', () => {
 		source_buffer = media_source.addSourceBuffer(mime_type);
+		function append_chunks() {
+			while (chunks.length > 0 && !source_buffer.updating) {
+				source_buffer.appendBuffer(chunks.shift());
+			}
+		}
 		source_buffer.addEventListener('updateend', () => {
-			if (media_init) {
-				if (source_buffer.buffered.length != 0) {
-					if (source_buffer.buffered.end(0) - live_video.currentTime > 20) {
-						live_video.currentTime = source_buffer.buffered.end(0) - 3;
-					}
+			if (source_buffer.buffered.length > 0) {
+				const start = source_buffer.buffered.start(0);
+				const end = source_buffer.buffered.end(0);
+				// if (live_video.currentTime > start + 60) {
+				// 	source_buffer.remove(start, start + 60);
+				// 	console.log('removing 60s');
+				// }
+				const seg_delay = 4;
+				if (player_state === 'pause' || live_video.currentTime + 30 < end) {
+					player_state = 'play';
+					live_video.currentTime = end - seg_delay;
+					console.log('jump to end');
 				}
-			} else {
-				media_init = true;
+				if (live_video.currentTime + seg_delay * 2 < end) {
+					live_video.playbackRate = 1.05;
+				} else {
+					live_video.playbackRate = 1;
+				}
 			}
 			append_chunks();
 		});
 		append_chunks();
 	});
+	live_video.src = URL.createObjectURL(media_source);
+}
+
+function player_reset() {
+	chunks = [];
+	source_buffer.abort();
+	player_state = 'pause';
 }
 
 function init_live() {
 	live_video = query('#live-video');
+	init_player();
 	live_video_start = query('#live-start');
 	live_video_start.addEventListener('click', () => {
 		set_live_video_paused(false);
@@ -217,15 +236,15 @@ function init_live() {
 	const live_chat_input = query('#live-chat-input');
 	query('#live-chat-form').addEventListener('submit', event => {
 		event.preventDefault();
-		if (!localStorage.auth) {
-			query('#button-login').click();
+		if (!localStorage.kick_token) {
+			token_modal.show();
 			return;
 		}
 		const content = live_chat_input.value;
 		live_chat_input.value = '';
 		ws.send(JSON.stringify({
-			type: 'live_message',
-			auth: localStorage.auth,
+			type: 'send_message',
+			auth: localStorage.kick_token,
 			content: content,
 		}));
 		return false;
