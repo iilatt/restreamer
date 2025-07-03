@@ -74,10 +74,25 @@ function generate_id(length) {
 }
 
 let ws;
+let discon_modal;
 let token_modal;
 
 function make_bookmark_link(target_host, target_name, storage_name, cookie_name) {
 	return 'javascript:(function(){' + encodeURIComponent("const ui=window.document.createElement(`div`);ui.style=`position:fixed;top:0;left:0;width:100%;height:100%;padding:10px;display:flex;align-items:center;flex-direction:column;gap:10px;font-size:1.4em;z-index:9999999;color:#fff;background-color:#000`;if(window.location.host.includes(`" + target_host + "`)){ui.innerHTML=`Redirecting back to %APP_URL%...`;const token_value=window.document.cookie.split(`;`).map(cookie=>cookie.trim()).find(cookie=>cookie.startsWith(`" + cookie_name + "`));if(!token_value){window.alert(`You need to log in first.`);return}window.location.href=`%APP_URL%#" + storage_name + "=${token_value.substring(" + (cookie_name.length + 1) + ")}`}else{ui.innerHTML=`You will now be redirected to " + target_name + " to authorize.<br><b>After the page loads click on this bookmark again.</b><button onclick=\"javascript:window.location.href='https://" + target_host + "'\" style=\"color:#fff;border:2px solid #fff;padding:10px;border-radius:10px\">Continue to " + target_name + "</button>`}window.document.body.appendChild(ui)") + '})();';
+}
+
+function make_discon_modal() {
+	const modal = make_modal('discon', false);
+	const foo1 = elem_create_html(`<span class="modal-title">Disconnected</span>`);
+	const foo2 = elem_create_html(`<div class="spacing"></div>`);
+	const foo3 = elem_create_html(`<button id="reload-button">Reload</button>`);
+	foo3.addEventListener('click', () => {
+		location.reload();
+	});
+	elem_append(modal.content, foo1);
+	elem_append(modal.content, foo2);
+	elem_append(modal.content, foo3);
+	return modal;
 }
 
 function make_token_modal() {
@@ -173,7 +188,7 @@ function main() {
 		}
 	};
 	ws.onclose = () => {
-		fade_in(query('#modal-disconnect-bg'));
+		discon_modal.show();
 	};
 
 	const input_fields = query_all('.input-field');
@@ -216,11 +231,8 @@ function main() {
 		});
 	});
 
+	discon_modal = make_discon_modal();
 	token_modal = make_token_modal();
 	init_live();
 	init_chat();
-
-	query('#reload-button').addEventListener('click', () => {
-		location.reload();
-	});
 }
