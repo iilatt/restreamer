@@ -4,6 +4,7 @@ import { respond400 } from './req_utils.js';
 export const websockets = [];
 
 export function on_ws_upgrade(res, req, context) {
+	res.onAborted(() => {});
 	const ip = is_dev ? 'local' : req.getHeader('cf-connecting-ip');
 	if (!is_dev) {
 		const ws_index = websockets.findIndex(ws => ws.ip === ip);
