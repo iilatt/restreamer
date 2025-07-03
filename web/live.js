@@ -18,16 +18,20 @@ function update_viewer_count(viewers) {
 	query('#live-viewer-count').innerText = viewers;
 }
 
+function reset_live() {
+	if (ws.readyState === WebSocket.OPEN) {
+		ws.send(JSON.stringify({
+			type: 'set_quality',
+			value: localStorage.live_quality,
+		}));
+	}
+}
+
 async function set_live_video_paused(new_paused) {
 	if (new_paused) {
 		live_video.pause();
 	} else {
-		if (ws.readyState === WebSocket.OPEN) {
-			ws.send(JSON.stringify({
-				type: 'set_quality',
-				value: localStorage.live_quality,
-			}));
-		}
+		reset_live();
 		live_video.play();
 	}
 }
@@ -47,15 +51,18 @@ function init_player() {
 			if (source_buffer.buffered.length > 0) {
 				const start = source_buffer.buffered.start(0);
 				const end = source_buffer.buffered.end(0);
-				if ((player_state === 'pause' && end - start > seg_delay) || live_video.currentTime + 30 < end) {
+				const remove_old_treshold = 60;
+				if (end - start > remove_old_treshold + 20) {
+					source_buffer.remove(start, start + remove_old_treshold);
+					console.log(`Removing first ${remove_old_treshold}s`);
+					reset_live();
+					return;
+				}
+				if ((player_state === 'pause' && end - start > seg_delay) || live_video.currentTime + 20 < end) {
 					player_state = 'play';
 					live_video.currentTime = end - seg_delay / 2;
 					console.log('Player seek to end');
-				}
-				const remove_old_treshold = 60;
-				if (end - start > remove_old_treshold + 120) {
-					source_buffer.remove(start, start + remove_old_treshold);
-					console.log(`Removing first ${remove_old_treshold}s`);
+					return;
 				}
 				if (live_video.currentTime + seg_delay * 3 < end) {
 					live_video.playbackRate = 1.1;
@@ -75,7 +82,6 @@ function init_player() {
 function player_reset() {
 	chunks = [];
 	player_state = 'pause';
-	source_buffer.abort();
 }
 
 function init_live() {
@@ -182,12 +188,7 @@ function init_live() {
 			quality_mode.classList.add('active');
 			localStorage.live_quality = value;
 			set_visible(live_settings_panel, false);
-			if (ws.readyState === WebSocket.OPEN) {
-				ws.send(JSON.stringify({
-					type: 'set_quality',
-					value: value,
-				}));
-			}
+			reset_live();
 		});
 	});
 	if (!localStorage.live_quality) {
