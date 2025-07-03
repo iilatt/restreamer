@@ -60,7 +60,7 @@ function init_player() {
 				}
 				if ((player_state === 'pause') || live_video.currentTime + 20 < end) {
 					player_state = 'play';
-					if (live_video.currentTime <= seg_delay || live_video.currentTime + seg_delay * 2 < end) {
+					if (live_video.currentTime <= seg_delay || live_video.currentTime + seg_delay < end) {
 						live_video.currentTime = end - seg_delay / 2;
 						console.log('Player seek to end');
 					}

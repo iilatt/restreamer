@@ -84,14 +84,12 @@ function make_bookmark_link(target_host, target_name, storage_name, cookie_name)
 function make_discon_modal() {
 	const modal = make_modal('discon', false);
 	const foo1 = elem_create_html(`<span class="modal-title">Disconnected</span>`);
-	const foo2 = elem_create_html(`<div class="spacing"></div>`);
-	const foo3 = elem_create_html(`<button id="reload-button">Reload</button>`);
-	foo3.addEventListener('click', () => {
+	const foo2 = elem_create_html(`<button>Reload</button>`);
+	foo2.addEventListener('click', () => {
 		location.reload();
 	});
 	elem_append(modal.content, foo1);
 	elem_append(modal.content, foo2);
-	elem_append(modal.content, foo3);
 	return modal;
 }
 
