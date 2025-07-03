@@ -47,15 +47,15 @@ function init_player() {
 			if (source_buffer.buffered.length > 0) {
 				const start = source_buffer.buffered.start(0);
 				const end = source_buffer.buffered.end(0);
-				const old_treshold = 300;
 				if ((player_state === 'pause' && end - start > seg_delay) || live_video.currentTime + 30 < end) {
 					player_state = 'play';
 					live_video.currentTime = end - seg_delay / 2;
 					console.log('Player seek to end');
 				}
-				if (live_video.currentTime > start + old_treshold + 60) {
-					source_buffer.remove(start, start + old_treshold);
-					console.log(`Removing first ${old_treshold}s`);
+				const remove_old_treshold = 60;
+				if (end - start > remove_old_treshold + 120) {
+					source_buffer.remove(start, start + remove_old_treshold);
+					console.log(`Removing first ${remove_old_treshold}s`);
 				}
 				if (live_video.currentTime + seg_delay * 3 < end) {
 					live_video.playbackRate = 1.1;
