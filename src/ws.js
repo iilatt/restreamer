@@ -1,4 +1,4 @@
-import { is_dev, kick_channel_id, lives } from './main.js';
+import { is_dev, config, lives } from './main.js';
 import { respond400 } from './req_utils.js';
 
 export const websockets = [];
@@ -20,9 +20,19 @@ export function on_ws_open(ws) {
 	websockets.push(ws);
 	ws.subscribe('all');
 	ws.send(JSON.stringify({
+		type: 'chat_modes',
+		modes: config.chat_modes,
+	}), false);
+	ws.send(JSON.stringify({
 		type: 'user_count',
 		count: websockets.length
 	}), false);
+}
+
+function make_nonce() {
+	const bytes = new Uint8Array(16);
+	crypto.getRandomValues(bytes);
+	return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
 export function on_ws_message(ws, message, is_binary) {
@@ -58,8 +68,36 @@ export function on_ws_message(ws, message, is_binary) {
 		if (lives[ws.quality].last_seg) {
 			ws.send(lives[ws.quality].last_seg, true);
 		}
-	} else if (json.type === 'send_message') {
-		fetch(`https://kick.com/api/v2/messages/send/${kick_channel_id}`, {
+	} else if (json.type === 'send_twtv_msg') {
+		fetch('https://gql.twitch.tv/gql', {
+			headers: {
+				'authorization': `OAuth ${json.auth}`,
+				'accept': 'application/json',
+				'content-type': 'application/json',
+				'origin': 'https://www.twitch.tv',
+				'client-id': 'kimne78kx3ncx6brgo4mv6wki5h1ko',
+			},
+			method: 'POST',
+			body: JSON.stringify({
+				operationName: 'sendChatMessage',
+				variables: {
+					input: {
+						channelID: config.twtv_channel_id,
+						message: json.content,
+						nonce: make_nonce(),
+						replyParentMessageID: null,
+					},
+				},
+				extensions: {
+					persistedQuery: {
+						version: 1,
+						sha256Hash: '0435464292cf380ed4b3d905e4edcb73078362e82c06367a5b2181c76c822fa2',
+					},
+				},
+			}),
+		});
+	} else if (json.type === 'send_kick_msg') {
+		fetch(`https://kick.com/api/v2/messages/send/${config.kick_channel_id}`, {
 			headers: {
 				'authorization': `Bearer ${json.auth}`,
 				'accept': 'application/json',

@@ -63,29 +63,6 @@ button, .wide {
 	padding: 0 10px;
 }
 
-.badge {
-	width: 20px; height: 20px;
-	display: flex; justify-content: center; align-items: center;
-	border-radius: 4px;
-
-	svg {
-		width: 14px; height: 14px;
-		color: #fff;
-	}
-
-	&.vip {
-		background-color: #ffa700;
-	}
-
-	&.verified {
-		background-color: var(--color-accent);
-	}
-	
-	&.broadcaster {
-		background-color: #cf0101;
-	}
-}
-
 .input-field {
 	position: relative;
 	display: flex; flex-direction: column; gap: 4px;

@@ -12,9 +12,7 @@ function load_optional_file(file_name) {
 	}
 }
 
-const streamlink_twitch_oauth = load_optional_file('streamlink_twitch_oauth');
-const streamlink_url = load_optional_file('streamlink_url');
-export const kick_channel_id = load_optional_file('kick_channel_id');
+export const config = JSON.parse(load_optional_file('config.json'));
 export const is_dev = process.argv[2] === '--dev';
 const web_files = get_web_files();
 
@@ -96,7 +94,7 @@ function start_stream(stream_url) {
 	console.log(`Starting stream for: ${stream_url}`);
 	const streamlink = spawn('streamlink', [
 		'--stdout',
-		`--http-header=Authorization=OAuth ${streamlink_twitch_oauth}`,
+		`--http-header=Authorization=OAuth ${config.stream_twtv_oauth}`,
 		'--hls-segment-stream-data',
 		'--hls-live-edge', '2',
 		'--stream-segment-threads', '3',
@@ -237,4 +235,4 @@ setInterval(() => {
 	}), false);
 }, 10000);
 
-start_stream(streamlink_url);
+start_stream(config.stream_url);

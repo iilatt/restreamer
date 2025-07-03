@@ -73,50 +73,27 @@ function generate_id(length) {
 	return Array.from(arr, dec => dec.toString(16).padStart(2, '0')).join('');
 }
 
-function make_badge(type) {
-	const badge = document.createElement('div');
-	badge.classList.add('badge');
-	switch (type) {
-		case 'm': {
-			badge.classList.add('moderator');
-			badge.title = 'Moderator';
-			badge.innerHTML = '<svg class="" viewBox="0 0 576 512"><path d="M0 128C0 92.7 28.7 64 64 64H320c35.3 0 64 28.7 64 64V384c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V128zM559.1 99.8c10.4 5.6 16.9 16.4 16.9 28.2V384c0 11.8-6.5 22.6-16.9 28.2s-23 5-32.9-1.6l-96-64L416 337.1V320 192 174.9l14.2-9.5 96-64c9.8-6.5 22.4-7.2 32.9-1.6z"/></svg>';
-			break;
-		}
-	}
-	return badge;
-}
-
-function make_badges(badges, parent) {
-	for (let i = 0; i < badges.length; ++i) {
-		parent.appendChild(make_badge(badges[i]));
-	}
-}
-
 let ws;
 let token_modal;
+
+function make_bookmark_link(target_host, target_name, storage_name, cookie_name) {
+	return 'javascript:(function(){' + encodeURIComponent("const ui=window.document.createElement(`div`);ui.style=`position:fixed;top:0;left:0;width:100%;height:100%;padding:10px;display:flex;align-items:center;flex-direction:column;gap:10px;font-size:1.4em;z-index:9999999;color:#fff;background-color:#000`;if(window.location.host.includes(`" + target_host + "`)){ui.innerHTML=`Redirecting back to %APP_URL%...`;const token_value=window.document.cookie.split(`;`).map(cookie=>cookie.trim()).find(cookie=>cookie.startsWith(`" + cookie_name + "`));if(!token_value){window.alert(`You need to log in first.`);return}window.location.href=`%APP_URL%#" + storage_name + "=${token_value.substring(" + (cookie_name.length + 1) + ")}`}else{ui.innerHTML=`You will now be redirected to " + target_name + " to authorize.<br><b>After the page loads click on this bookmark again.</b><button onclick=\"javascript:window.location.href='https://" + target_host + "'\" style=\"color:#fff;border:2px solid #fff;padding:10px;border-radius:10px\">Continue to " + target_name + "</button>`}window.document.body.appendChild(ui)") + '})();';
+}
 
 function make_token_modal() {
 	const modal = make_modal('token', true);
 	const foo1 = elem_create_html(`<span class="modal-title">Chat Token</span>`);
 	const foo2 = elem_create_html(`<span class="subtext">To send messages in Chat you will need to provide a Token.</span>`);
 	const foo3 = elem_create_html(`<span>Drag the below button on to your Bookmarks Bar or copy the link and add it as a Bookmark manually. Then click the Bookmark once and follow the instructions on screen.</span>`);
-	const bookmark_code = encodeURIComponent("if (window.location.host.includes(`kick.com`)) {window.location.replace(`%APP_URL%#kick_token=${document.cookie.split(`;`).map(cookie => cookie.trim()).find(cookie => cookie.startsWith('session_token')).substring(14)}`)} else {window.alert(`You will now be redirected to Kick.com to login.\nAfter the page loads click on this bookmark again.`);window.location.replace(`https://kick.com`)}");
-	const foo4 = elem_create_html(`<div class="bookmark"><a href="javascript:(function(){${bookmark_code}})();" class="link">Kick Login</a><span>← drag this button to your Bookmarks Bar.</span></div>`);
-	// const foo5 = elem_create_html(`<form id="modal-token-form" class="modal-form">
-	// 	<div class="modal-part">
-	// 		<span class="subtext">If you already have a token you can paste it here:</span>
-	// 		<div class="input-field">
-	// 			<input id="foobar" minlength="3" maxlength="16">
-	// 			<span class="label">Kick Token</span>
-	// 		</div>
-	// 	</div>
-	// </form>`);
+	const twtv_bookmark_link = make_bookmark_link('twitch.tv', 'Twitch.tv', 'twtv_token', 'auth-token');
+	const foo4 = elem_create_html(`<div class="bookmark"><a href="${twtv_bookmark_link}" class="link">Twitch Login</a><span>← drag this button to your Bookmarks Bar.</span></div>`);
+	const kick_bookmark_link = make_bookmark_link('kick.com', 'Kick.com', 'kick_token', 'session_token');
+	const foo5 = elem_create_html(`<div class="bookmark"><a href="${kick_bookmark_link}" class="link">Kick Login</a><span>← drag this button to your Bookmarks Bar.</span></div>`);
 	elem_append(modal.content, foo1);
 	elem_append(modal.content, foo2);
 	elem_append(modal.content, foo3);
 	elem_append(modal.content, foo4);
-	// elem_append(modal.content, foo5);
+	elem_append(modal.content, foo5);
 	const bookmark_explain = query('#bookmark-explain');
 	const bookmarks = modal.content.querySelectorAll('.bookmark > .link');
 	bookmarks.forEach(bookmark => {
@@ -140,21 +117,54 @@ function make_token_modal() {
 	return modal;
 }
 
+function add_chat_modes(modes) {
+	const mode_elems = [];
+	for (let a = 0; a < modes.length; ++a) {
+		const mode = modes[a];
+		const elem = elem_create_html(`<button class="chat-mode wide">${mode.name}</button>`);
+		const set_mode = () => {
+			if (!chat_ready) {
+				return;
+			}
+			mode_elems.forEach(old_mode_elem => {
+				old_mode_elem.classList.remove('active');
+			});
+			elem.classList.add('active');
+			set_chat_mode(mode.platform, mode.target, mode.encrypt);
+		};
+		mode_elems.push(elem);
+		elem.addEventListener('click', () => {
+			set_mode();
+		});
+		if (a === 0) {
+			set_mode();
+		}
+		elem_append(query('#live-chat-modes'), elem);
+	}
+}
+
 function main() {
+	console.log('ReStreamer v0.1');
 	const hash_params = new URLSearchParams(window.location.hash.substring(1));
+	const twtv_token = hash_params.get('twtv_token');
+	if (twtv_token) {
+		localStorage.twtv_token = twtv_token;
+	}
 	const kick_token = hash_params.get('kick_token');
 	if (kick_token) {
 		localStorage.kick_token = kick_token;
-		window.history.replaceState({}, '', window.location.pathname);
 	}
+	window.history.replaceState({}, '', window.location.pathname);
 	ws = new WebSocket(location.origin.replace('http', 'ws'));
 	ws.onmessage = event => {
 		if (typeof(event.data) === 'string') {
 			const json = JSON.parse(event.data);
 			if (json.type == 'live_reset') {
 				player_reset();
-			} else if (json.type == 'user_count') {
+			} else if (json.type === 'user_count') {
 				update_viewer_count(json.count);
+			} else if (json.type === 'chat_modes') {
+				add_chat_modes(json.modes);
 			}
 		} else {
 			event.data.arrayBuffer().then(ab => {
@@ -213,19 +223,4 @@ function main() {
 	query('#reload-button').addEventListener('click', () => {
 		location.reload();
 	});
-
-	const chat_modes = query_all('.chat-mode');
-	chat_modes.forEach(chat_mode => {
-		chat_mode.set_channel = () => {
-			chat_modes.forEach(old_chat_mode => {
-				old_chat_mode.classList.remove('active');
-			});
-			chat_mode.classList.add('active');
-			query('#twitch-chat').src = chat_mode.getAttribute('target_frame_src');
-		};
-		chat_mode.addEventListener('click', () => {
-			chat_mode.set_channel();
-		});
-	});
-	chat_modes[0].set_channel();
 }

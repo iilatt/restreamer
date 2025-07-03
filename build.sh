@@ -5,9 +5,9 @@ nest="$(realpath tool/nest-0.4)"
 webcat="$(realpath tool/webcat-0.3)"
 minhtml="$(realpath tool/minhtml-0.15.0) --minify-css --minify-js"
 
-app_name='Example'
-app_desc="ReStreamer Example App."
-app_url='example.com'
+app_name='ReStreamer'
+app_desc='ReStreamer Example App.'
+app_url='localhost'
 mkdir -p temp
 static_path="$(realpath static)"
 
