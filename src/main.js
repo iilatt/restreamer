@@ -127,6 +127,7 @@ function start_stream(stream_url) {
 		'-map', '[1080p]', '-map', '[a1]',
 		'-c:v', 'libx264', '-preset', 'veryfast', '-g', '120',
 		'-profile:v', 'high', '-level', '4.0',
+		'-b:v', '12000k', '-c:a', 'aac', '-b:a', '128k',
 		'-movflags', 'frag_keyframe+empty_moov+default_base_moof',
 		'-f', 'mp4', 'pipe:1',
 		// 720p output
