@@ -58,10 +58,12 @@ function init_player() {
 					reset_live();
 					return;
 				}
-				if ((player_state === 'pause' && end - start > seg_delay) || live_video.currentTime + 20 < end) {
+				if ((player_state === 'pause') || live_video.currentTime + 20 < end) {
 					player_state = 'play';
-					live_video.currentTime = end - seg_delay / 2;
-					console.log('Player seek to end');
+					if (live_video.currentTime <= seg_delay || live_video.currentTime + seg_delay * 2 < end) {
+						live_video.currentTime = end - seg_delay / 2;
+						console.log('Player seek to end');
+					}
 					return;
 				}
 				if (live_video.currentTime + seg_delay * 3 < end) {
@@ -81,7 +83,6 @@ function init_player() {
 
 function player_reset() {
 	chunks = [];
-	player_state = 'pause';
 }
 
 function init_live() {
