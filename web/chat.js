@@ -3,6 +3,7 @@ let chat_ready = true;
 let chat_ws;
 let chat_platform;
 let chat_encrypt;
+let chat_target_id;
 let seventv;
 
 function make_badge(platform, badge, parent) {
@@ -189,6 +190,7 @@ async function init_kick_chat(channel_name) {
 		const res = await fetch(`https://kick.com/api/v2/channels/${channel_name}/chatroom`);
 		const json = await res.json();
 		const kick_chat_id = json.id.toString();
+		chat_target_id = kick_chat_id;
 		init_kick_chat_ws(kick_channel_id, kick_chat_id);
 	}
 }
@@ -238,6 +240,7 @@ async function init_twitch_chat(channel_name) {
 	});
 	const json = await res.json();
 	const twitch_user_id = json.data.user.id;
+	chat_target_id = twitch_user_id;
 	await get_seventv('TWITCH', twitch_user_id);
 	{
 		const res = await fetch(`https://recent-messages.zneix.eu/api/v2/recent-messages/${channel_name}?limit=100`);
@@ -277,12 +280,14 @@ function init_chat() {
 			ws.send(JSON.stringify({
 				type: 'send_twtv_msg',
 				auth: localStorage.twtv_token,
+				target: chat_target_id,
 				content: content,
 			}));
 		} else if (chat_platform === 'kick') {
 			ws.send(JSON.stringify({
 				type: 'send_kick_msg',
 				auth: localStorage.kick_token,
+				target: chat_target_id,
 				content: content,
 			}));
 		}

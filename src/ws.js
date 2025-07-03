@@ -82,7 +82,7 @@ export function on_ws_message(ws, message, is_binary) {
 				operationName: 'sendChatMessage',
 				variables: {
 					input: {
-						channelID: config.twtv_channel_id,
+						channelID: json.target,
 						message: json.content,
 						nonce: make_nonce(),
 						replyParentMessageID: null,
@@ -97,7 +97,7 @@ export function on_ws_message(ws, message, is_binary) {
 			}),
 		});
 	} else if (json.type === 'send_kick_msg') {
-		fetch(`https://kick.com/api/v2/messages/send/${config.kick_channel_id}`, {
+		fetch(`https://kick.com/api/v2/messages/send/${json.target}`, {
 			headers: {
 				'authorization': `Bearer ${json.auth}`,
 				'accept': 'application/json',
