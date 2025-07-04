@@ -1,6 +1,7 @@
 let live_chat;
 let live_chat_input;
 let emote_panel;
+let chat_platform;
 let chat_target;
 let chat_encrypt;
 let chat_target_id;
@@ -249,6 +250,7 @@ function init_chat() {
 }
 
 async function set_chat_mode(platform, history, target_id, encrypt) {
+	chat_platform = platform;
 	chat_target_id = target_id;
 	chat_encrypt = encrypt;
 	elem_set_inner_html(live_chat, '');
