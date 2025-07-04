@@ -53,8 +53,8 @@ async function init_kick_chat(chat, channel_name) {
 	const res = await fetch(`https://kick.com/api/v2/channels/${channel_name}`);
 	const json = await res.json();
 	const kick_channel_id = json.id.toString();
-	chat.id = kick_channel_id;
 	const kick_user_id = json.user_id.toString();
+	chat.id = kick_user_id;
 	{
 		const res = await fetch(`https://kick.com/api/v2/channels/${channel_name}/chatroom`);
 		const json = await res.json();
