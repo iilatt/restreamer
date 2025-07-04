@@ -2,6 +2,7 @@ let live_chat;
 let live_chat_input;
 let emote_panel;
 let chat_platform;
+let chat_history;
 let chat_target;
 let chat_encrypt;
 let chat_target_id;
@@ -176,6 +177,13 @@ async function get_seventv(platform, platform_id) {
 			elem_append(emote_panel, emote_elem);
 		});
 	});
+	for (const history_msg_data of chat_history) {
+		if (platform === 'twtv') {
+			on_twitch_message(history_msg_data);
+		} else if (platform === 'kick') {
+			on_kick_message(history_msg_data);
+		}
+	}
 }
 
 function on_kick_message(msg_data) {
@@ -251,6 +259,7 @@ function init_chat() {
 
 async function set_chat_mode(platform, history, target_id, encrypt) {
 	chat_platform = platform;
+	chat_history = history;
 	chat_target_id = target_id;
 	chat_encrypt = encrypt;
 	elem_set_inner_html(live_chat, '');
@@ -258,12 +267,5 @@ async function set_chat_mode(platform, history, target_id, encrypt) {
 		get_seventv('TWITCH', target_id);
 	} else if (platform === 'kick') {
 		get_seventv('KICK', target_id);
-	}
-	for (const history_msg_data of history) {
-		if (platform === 'twtv') {
-			on_twitch_message(history_msg_data);
-		} else if (platform === 'kick') {
-			on_kick_message(history_msg_data);
-		}
 	}
 }
