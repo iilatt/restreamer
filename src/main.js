@@ -18,35 +18,55 @@ export const config = JSON.parse(load_optional_file('config.json'));
 export const is_dev = process.argv[2] === '--dev';
 const web_files = get_web_files();
 
+const cache = new Map();
+const fileStats = new Map();
+
 export const app = App();
 app.get('/hls/:filename', (res, req) => {
-	res.onAborted(() => {});
-	const filename = req.getParameter(0);
-	if (!filename.match(/^[a-zA-Z0-9_-]+(\.m3u8|\.ts)$/)) {
-		return res.writeStatus('400 Bad Request').end();
-	}
-	const file_path = path.join(hls_dir, filename);
-	const resolvedPath = path.resolve(file_path);
-	if (!resolvedPath.startsWith(path.resolve(hls_dir))) {
-		return res.writeStatus('403 Forbidden').end();
-	}
-	try {
-		if (fs.existsSync(file_path)) {
-			const data = fs.readFileSync(file_path);
-			if (filename.endsWith('.m3u8')) {
-				res.writeHeader('Content-Type', 'application/vnd.apple.mpegurl');
-			} else if (filename.endsWith('.ts')) {
-				res.writeHeader('Content-Type', 'video/MP2T');
-			}
-			res.end(data);
-		} else {
-			res.writeStatus('404 Not Found').end();
-		}
-	} catch (err) {
-		console.error('File serving error:', err);
-		res.writeStatus('500 Internal Server Error').end();
-	}
-}).get('/*', (res, req) => {
+    res.onAborted(() => {});
+    const filename = req.getParameter(0);
+    if (!filename.match(/^[a-zA-Z0-9_-]+(\.m3u8|\.ts)$/)) {
+        return res.writeStatus('400 Bad Request').end();
+    }
+    const file_path = path.join(hls_dir, filename);
+    const resolved_path = path.resolve(file_path);
+    if (!resolved_path.startsWith(path.resolve(hls_dir))) {
+        return res.writeStatus('403 Forbidden').end();
+    }
+    try {
+        const stats = fs.statSync(file_path);
+        if (!stats.isFile()) {
+            return res.writeStatus('404 Not Found').end();
+        }
+        const cached = cache.get(file_path);
+        const lastModified = fileStats.get(file_path);
+        if (cached && lastModified && stats.mtimeMs <= lastModified) {
+            if (filename.endsWith('.m3u8')) {
+                res.writeHeader('Content-Type', 'application/vnd.apple.mpegurl');
+            } else if (filename.endsWith('.ts')) {
+                res.writeHeader('Content-Type', 'video/MP2T');
+            }
+            return res.end(cached);
+        }
+        const data = fs.readFileSync(file_path);
+        cache.set(file_path, data);
+        fileStats.set(file_path, stats.mtimeMs);
+        if (filename.endsWith('.m3u8')) {
+            res.writeHeader('Content-Type', 'application/vnd.apple.mpegurl');
+        } else if (filename.endsWith('.ts')) {
+            res.writeHeader('Content-Type', 'video/MP2T');
+        }
+        res.end(data);
+    } catch (err) {
+        if (err.code === 'ENOENT') {
+            return res.writeStatus('404 Not Found').end();
+        }
+        console.error('File serving error:', err);
+        res.writeStatus('500 Internal Server Error').end();
+    }
+});
+
+app.get('/*', (res, req) => {
 	res.onAborted(() => {});
 	const url = req.getUrl();
 	let content;
@@ -93,6 +113,7 @@ function start_stream(stream_url, quality) {
 	const streamlink = spawn('streamlink', [
 		'--stdout',
 		`--http-header=Authorization=OAuth ${config.stream_twtv_oauth}`,
+		'--hls-live-restart',
 		'--hls-segment-stream-data',
 		'--hls-live-edge', '4',
 		'--stream-segment-threads', '2',
