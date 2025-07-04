@@ -1,4 +1,7 @@
 #!/bin/bash
 set -e
 
-./build.sh && node src/main.js
+./build.sh
+rm -rf hls
+mkdir hls
+node src/main.js
