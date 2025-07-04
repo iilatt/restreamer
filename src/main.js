@@ -93,6 +93,9 @@ function start_stream(stream_url, quality) {
 	const streamlink = spawn('streamlink', [
 		'--stdout',
 		`--http-header=Authorization=OAuth ${config.stream_twtv_oauth}`,
+		'--hls-segment-stream-data',
+		'--hls-live-edge', '4',
+		'--stream-segment-threads', '2',
 		stream_url,
 		quality,
 	]);
