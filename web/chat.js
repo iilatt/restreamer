@@ -2,10 +2,9 @@ let live_chat;
 let live_chat_input;
 let emote_panel;
 let chat_platform;
-let chat_history;
+let chat_history = [];
 let chat_target;
 let chat_encrypt;
-let chat_target_id;
 let seventv = {};
 
 function make_badge(platform, badge, parent) {
@@ -184,6 +183,7 @@ async function get_seventv(platform, platform_id) {
 			on_kick_message(history_msg_data);
 		}
 	}
+	chat_history = [];
 }
 
 function on_kick_message(msg_data) {
@@ -200,17 +200,15 @@ function on_twitch_message(msg_data) {
 		tags[values[0]] = values[1];
 	});
 	const command = msg_data.substring(command_start_index + 1, command_end_index);
-	if (command.includes('PRIVMSG #')) {
-		const badges = tags['badges'].split(',').filter(badge => badge.length).map(badge => {
-			return {
-				type: badge.split('/')[0],
-				text: 'Twitch Badge',
-			}
-		});
-		const content = msg_data.substring(command_end_index + 1).replaceAll('\n', '');
-		const content_html = parse_message_content(content, 'twtv');
-		add_live_message('twtv', tags['display-name'], tags['color'], badges, content_html);
-	}
+	const badges = tags['badges'].split(',').filter(badge => badge.length).map(badge => {
+		return {
+			type: badge.split('/')[0],
+			text: 'Twitch Badge',
+		}
+	});
+	const content = msg_data.substring(command_end_index + 1).replaceAll('\n', '');
+	const content_html = parse_message_content(content, 'twtv');
+	add_live_message('twtv', tags['display-name'], tags['color'], badges, content_html);
 }
 
 function init_chat() {
@@ -238,21 +236,11 @@ function init_chat() {
 			content = '_8888_' + btoa(unescape(encodeURIComponent(content)));
 		}
 		live_chat_input.value = '';
-		if (chat_platform === 'twtv') {
-			ws.send(JSON.stringify({
-				type: 'send_twtv_msg',
-				auth: localStorage.twtv_token,
-				target: chat_target_id,
-				content: content,
-			}));
-		} else if (chat_platform === 'kick') {
-			ws.send(JSON.stringify({
-				type: 'send_kick_msg',
-				auth: localStorage.kick_token,
-				target: chat_target_id,
-				content: content,
-			}));
-		}
+		ws.send(JSON.stringify({
+			type: 'send_chat',
+			auth: chat_platform === 'twtv' ? localStorage.twtv_token : localStorage.kick_token,
+			content: content,
+		}));
 		return false;
 	});
 }
@@ -260,7 +248,6 @@ function init_chat() {
 async function set_chat_mode(platform, history, target_id, encrypt) {
 	chat_platform = platform;
 	chat_history = history;
-	chat_target_id = target_id;
 	chat_encrypt = encrypt;
 	elem_set_inner_html(live_chat, '');
 	if (platform === 'twtv') {

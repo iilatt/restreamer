@@ -36,6 +36,7 @@ async function init_twitch_chat(chat, channel_name) {
 	const json = await res.json();
 	const twitch_user_id = json.data.user.id;
 	chat.id = twitch_user_id;
+	chat.chat_id = twitch_user_id;
 	const chat_ws = new WebSocket('wss://irc-ws.chat.twitch.tv/');
 	chat_ws.onopen = () => {
 		chat_ws.send('CAP REQ :twitch.tv/commands twitch.tv/tags');
@@ -45,7 +46,9 @@ async function init_twitch_chat(chat, channel_name) {
 		chat_ws.send(`JOIN #${channel_name}`);
 	};
 	chat_ws.onmessage = event => {
-		add_chat_message(chat, event.data);
+		if (event.data.includes('PRIVMSG #')) {
+			add_chat_message(chat, event.data);
+		}
 	};
 }
 
@@ -59,6 +62,7 @@ async function init_kick_chat(chat, channel_name) {
 		const res = await fetch(`https://kick.com/api/v2/channels/${channel_name}/chatroom`);
 		const json = await res.json();
 		const kick_chat_id = json.id.toString();
+		chat.chat_id = kick_chat_id;
 		{
 			const chat_ws = new WebSocket('wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679?protocol=7&client=js&version=8.4.0&flash=false');
 			chat_ws.onopen = () => {
@@ -76,16 +80,16 @@ async function init_kick_chat(chat, channel_name) {
 	}
 }
 
-export function init_chats(chat_modes) {
+export async function init_chats(chat_modes) {
 	for (let a = 0; a < chat_modes.length; ++a) {
 		const chat_mode = chat_modes[a];
 		chat_mode.index = a;
 		chat_mode.history = [];
 		chats.push(chat_mode);
 		if (chat_mode.platform === 'twtv') {
-			init_twitch_chat(chat_mode, chat_mode.target);
+			await init_twitch_chat(chat_mode, chat_mode.target);
 		} else if (chat_mode.platform === 'kick') {
-			init_kick_chat(chat_mode, chat_mode.target);
+			await init_kick_chat(chat_mode, chat_mode.target);
 		}
 	}
 }

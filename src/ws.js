@@ -36,6 +36,54 @@ function make_nonce() {
 	return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
+async function send_twtv_chat(auth, chat_id, content) {
+	const res = await fetch('https://gql.twitch.tv/gql', {
+		headers: {
+			'authorization': `OAuth ${auth}`,
+			'accept': 'application/json',
+			'content-type': 'application/json',
+			'origin': 'https://www.twitch.tv',
+			'client-id': 'kimne78kx3ncx6brgo4mv6wki5h1ko',
+		},
+		method: 'POST',
+		body: JSON.stringify({
+			operationName: 'sendChatMessage',
+			variables: {
+				input: {
+					channelID: chat_id.toString(),
+					message: content,
+					nonce: make_nonce(),
+					replyParentMessageID: null,
+				},
+			},
+			extensions: {
+				persistedQuery: {
+					version: 1,
+					sha256Hash: '0435464292cf380ed4b3d905e4edcb73078362e82c06367a5b2181c76c822fa2',
+				},
+			},
+		}),
+	});
+	const text = await res.text();
+}
+
+function send_kick_chat(auth, chat_id, content) {
+	fetch(`https://kick.com/api/v2/messages/send/${chat_id}`, {
+		headers: {
+			'authorization': `Bearer ${auth}`,
+			'accept': 'application/json',
+			'content-type': 'application/json',
+			'origin': 'https://kick.com',
+		},
+		method: 'POST',
+		body: JSON.stringify({
+			content: content,
+			type: 'message',
+			message_ref: Date.now(),
+		}),
+	});
+}
+
 export function on_ws_message(ws, message, is_binary) {
 	if (is_binary) {
 		ws.close();
@@ -88,49 +136,16 @@ export function on_ws_message(ws, message, is_binary) {
 			target: chats[ws.chat].id,
 			encrypt: chats[ws.chat].encrypt,
 		}), false);
-	} else if (json.type === 'send_twtv_msg') {
-		fetch('https://gql.twitch.tv/gql', {
-			headers: {
-				'authorization': `OAuth ${json.auth}`,
-				'accept': 'application/json',
-				'content-type': 'application/json',
-				'origin': 'https://www.twitch.tv',
-				'client-id': 'kimne78kx3ncx6brgo4mv6wki5h1ko',
-			},
-			method: 'POST',
-			body: JSON.stringify({
-				operationName: 'sendChatMessage',
-				variables: {
-					input: {
-						channelID: json.target,
-						message: json.content,
-						nonce: make_nonce(),
-						replyParentMessageID: null,
-					},
-				},
-				extensions: {
-					persistedQuery: {
-						version: 1,
-						sha256Hash: '0435464292cf380ed4b3d905e4edcb73078362e82c06367a5b2181c76c822fa2',
-					},
-				},
-			}),
-		});
-	} else if (json.type === 'send_kick_msg') {
-		fetch(`https://kick.com/api/v2/messages/send/${json.target}`, {
-			headers: {
-				'authorization': `Bearer ${json.auth}`,
-				'accept': 'application/json',
-				'content-type': 'application/json',
-				'origin': 'https://kick.com',
-			},
-			method: 'POST',
-			body: JSON.stringify({
-				content: json.content,
-				type: 'message',
-				message_ref: Date.now(),
-			}),
-		});
+	} else if (json.type === 'send_chat') {
+		if (typeof(ws.chat) !== 'number') {
+			return;
+		}
+		const chat = chats[ws.chat];
+		if (chat.platform === 'twtv') {
+			send_twtv_chat(json.auth, chat.chat_id, json.content);
+		} else if (chat.platform === 'kick') {
+			send_kick_chat(json.auth, chat.chat_id, json.content);
+		}
 	}
 }
 

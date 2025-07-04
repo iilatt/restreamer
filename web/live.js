@@ -29,6 +29,7 @@ function reset_live() {
 
 async function set_live_video_paused(new_paused) {
 	if (new_paused) {
+		player_state = 'pause';
 		live_video.pause();
 	} else {
 		reset_live();
@@ -58,9 +59,9 @@ function init_player() {
 					reset_live();
 					return;
 				}
-				if ((player_state === 'pause') || live_video.currentTime + 20 < end) {
-					player_state = 'play';
-					if (live_video.currentTime <= seg_delay || live_video.currentTime + seg_delay < end) {
+				if (player_state === 'pause' || live_video.currentTime + 20 < end) {
+					if (live_video.currentTime + seg_delay / 2 < end) {
+						player_state = 'play';
 						live_video.currentTime = end - seg_delay / 2;
 						console.log('Player seek to end');
 					}

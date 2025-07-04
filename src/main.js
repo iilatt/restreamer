@@ -238,5 +238,5 @@ setInterval(() => {
 	}), false);
 }, 20000);
 
+await init_chats(config.chat_modes);
 start_stream(config.stream_url);
-init_chats(config.chat_modes);
