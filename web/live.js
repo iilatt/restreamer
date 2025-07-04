@@ -1,94 +1,40 @@
-let chunks = [];
-let media_source;
-let source_buffer;
 let live_video;
+let hls;
 let live_video_start;
 let live_video_pause;
-let player_state = 'pause';
-
-function new_live_video_data(ab) {
-	if (source_buffer && !source_buffer.updating && chunks.length === 0) {
-		source_buffer.appendBuffer(ab);
-	} else {
-		chunks.push(ab);
-	}
-}
 
 function update_viewer_count(viewers) {
 	query('#live-viewer-count').innerText = viewers;
 }
 
-function reset_live() {
-	if (ws.readyState === WebSocket.OPEN) {
-		ws.send(JSON.stringify({
-			type: 'set_live',
-			value: localStorage.live_quality,
-		}));
-	}
-}
-
 async function set_live_video_paused(new_paused) {
 	if (new_paused) {
-		player_state = 'pause';
 		live_video.pause();
 	} else {
-		reset_live();
 		live_video.play();
+		live_video.currentTime = hls.liveSyncPosition;
 	}
 }
 
-function init_player() {
-	media_source = new MediaSource();
-	source_buffer = null;
-	media_source.addEventListener('sourceopen', () => {
-		source_buffer = media_source.addSourceBuffer('video/mp4; codecs="avc1.640028, mp4a.40.2"');
-		function append_chunks() {
-			while (chunks.length > 0 && !source_buffer.updating) {
-				source_buffer.appendBuffer(chunks.shift());
-			}
-		}
-		const seg_delay = 4;
-		source_buffer.addEventListener('updateend', () => {
-			if (source_buffer.buffered.length > 0) {
-				const start = source_buffer.buffered.start(0);
-				const end = source_buffer.buffered.end(0);
-				const remove_old_treshold = 60;
-				if (end - start > remove_old_treshold + 20) {
-					source_buffer.remove(start, start + remove_old_treshold);
-					console.log(`Removing first ${remove_old_treshold}s`);
-					reset_live();
-					return;
-				}
-				if (player_state === 'pause' || live_video.currentTime + 20 < end) {
-					if (live_video.currentTime + seg_delay < end) {
-						player_state = 'play';
-						live_video.currentTime = end - seg_delay;
-						console.log('Player seek to end');
-					}
-					return;
-				}
-				if (live_video.currentTime + seg_delay * 3 < end) {
-					live_video.playbackRate = 1.1;
-				} else if (live_video.currentTime + seg_delay * 2 < end) {
-					live_video.playbackRate = 1.05;
-				} else {
-					live_video.playbackRate = 1;
-				}
-			}
-			append_chunks();
-		});
-		append_chunks();
-	});
-	live_video.src = URL.createObjectURL(media_source);
-}
-
-function player_reset() {
-	chunks = [];
+function start_hls() {
+	if (hls) {
+		hls.destroy();
+	}
+	const video_src = `/hls/${localStorage.live_quality}.m3u8`;
+	if (Hls.isSupported()) {
+		hls = new Hls();
+		hls.loadSource(video_src);
+		hls.attachMedia(live_video);
+	} else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+		video.src = video_src;
+	} else {
+		window.alert('Your browser is not supported.');
+	}
+	live_video.play();
 }
 
 function init_live() {
 	live_video = query('#live-video');
-	init_player();
 	live_video_start = query('#live-start');
 	live_video_start.addEventListener('click', () => {
 		set_live_video_paused(false);
@@ -190,7 +136,7 @@ function init_live() {
 			quality_mode.classList.add('active');
 			localStorage.live_quality = value;
 			set_visible(live_settings_panel, false);
-			reset_live();
+			start_hls();
 		});
 	});
 	if (!localStorage.live_quality) {

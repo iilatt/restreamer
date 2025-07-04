@@ -3,3 +3,4 @@ temp/
 static/app.html
 static/favicon.ico
 config.json
+hls/

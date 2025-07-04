@@ -96,28 +96,7 @@ export function on_ws_message(ws, message, is_binary) {
 		ws.close();
 		return;
 	}
-	if (json.type === 'set_live') {
-		if (typeof(json.value) !== 'string') {
-			ws.close();
-			return;
-		}
-		ws.unsubscribe(`live/${ws.live}`);
-		ws.live = json.value;
-		if (!lives[ws.live]) {
-			ws.close();
-			return;
-		}
-		ws.subscribe(`live/${ws.live}`);
-		ws.send(JSON.stringify({
-			type: 'live_init'
-		}), false);
-		if (lives[ws.live].init_seg) {
-			ws.send(lives[ws.live].init_seg, true);
-		}
-		if (lives[ws.live].last_seg) {
-			ws.send(lives[ws.live].last_seg, true);
-		}
-	} else if (json.type == 'set_chat') {
+	if (json.type == 'set_chat') {
 		if (typeof(json.value) !== 'number') {
 			ws.close();
 			return;

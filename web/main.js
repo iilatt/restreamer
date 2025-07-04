@@ -172,9 +172,7 @@ function main() {
 	ws.onmessage = event => {
 		if (typeof(event.data) === 'string') {
 			const json = JSON.parse(event.data);
-			if (json.type == 'live_init') {
-				player_reset();
-			} else if (json.type === 'user_count') {
+			if (json.type === 'user_count') {
 				update_viewer_count(json.count);
 			} else if (json.type === 'chat_modes') {
 				add_chat_modes(json.modes);
@@ -185,10 +183,6 @@ function main() {
 			} else if (json.type === 'kick_chat') {
 				on_kick_message(json.data);
 			}
-		} else {
-			event.data.arrayBuffer().then(ab => {
-				new_live_video_data(ab);
-			});
 		}
 	};
 	ws.onclose = () => {

@@ -9,8 +9,6 @@ function content_type(name) {
 		case 'png':  return 'image/png';
 		case 'jpg':  return 'image/jpeg';
 		case 'ico':  return 'image/x-icon';
-		case 'otf':  return 'application/x-font-opentype';
-		case 'wav':  return 'audio/wav';
 		default:     return 'text/plain';
 	}
 }
