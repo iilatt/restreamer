@@ -25,12 +25,14 @@ function start_hls() {
 		hls = new Hls();
 		hls.loadSource(video_src);
 		hls.attachMedia(live_video);
+		hls.on(Hls.Events.MEDIA_ATTACHED, function () {
+			live_video.play();
+		});
 	} else if (video.canPlayType('application/vnd.apple.mpegurl')) {
 		video.src = video_src;
 	} else {
 		window.alert('Your browser is not supported.');
 	}
-	live_video.play();
 }
 
 function init_live() {
