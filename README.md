@@ -1,4 +1,4 @@
-# ReStreamer v0.1
+# ReStreamer v0.2
 
 Features:
 * Twitch/Kick stream and chat

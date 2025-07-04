@@ -21,7 +21,7 @@ function update_viewer_count(viewers) {
 function reset_live() {
 	if (ws.readyState === WebSocket.OPEN) {
 		ws.send(JSON.stringify({
-			type: 'set_quality',
+			type: 'set_live',
 			value: localStorage.live_quality,
 		}));
 	}

@@ -1,4 +1,4 @@
-import { is_dev, config, lives } from './main.js';
+import { is_dev, config, lives, chats } from './main.js';
 import { respond400 } from './req_utils.js';
 
 export const websockets = [];
@@ -48,27 +48,46 @@ export function on_ws_message(ws, message, is_binary) {
 		ws.close();
 		return;
 	}
-	if (json.type === 'set_quality') {
+	if (json.type === 'set_live') {
 		if (typeof(json.value) !== 'string') {
 			ws.close();
 			return;
 		}
-		ws.unsubscribe(`live/${ws.quality}`);
-		ws.quality = json.value;
-		if (!lives[ws.quality]) {
+		ws.unsubscribe(`live/${ws.live}`);
+		ws.live = json.value;
+		if (!lives[ws.live]) {
 			ws.close();
 			return;
 		}
-		ws.subscribe(`live/${ws.quality}`);
+		ws.subscribe(`live/${ws.live}`);
 		ws.send(JSON.stringify({
-			type: 'live_reset'
+			type: 'live_init'
 		}), false);
-		if (lives[ws.quality].init_seg) {
-			ws.send(lives[ws.quality].init_seg, true);
+		if (lives[ws.live].init_seg) {
+			ws.send(lives[ws.live].init_seg, true);
 		}
-		if (lives[ws.quality].last_seg) {
-			ws.send(lives[ws.quality].last_seg, true);
+		if (lives[ws.live].last_seg) {
+			ws.send(lives[ws.live].last_seg, true);
 		}
+	} else if (json.type == 'set_chat') {
+		if (typeof(json.value) !== 'number') {
+			ws.close();
+			return;
+		}
+		ws.unsubscribe(`chat/${ws.chat}`);
+		ws.chat = json.value;
+		if (ws.chat < 0 || ws.chat >= chats.length) {
+			ws.close();
+			return;
+		}
+		ws.subscribe(`chat/${ws.chat}`);
+		ws.send(JSON.stringify({
+			type: 'chat_init',
+			platform: chats[ws.chat].platform,
+			history: chats[ws.chat].history,
+			target: chats[ws.chat].id,
+			encrypt: chats[ws.chat].encrypt,
+		}), false);
 	} else if (json.type === 'send_twtv_msg') {
 		fetch('https://gql.twitch.tv/gql', {
 			headers: {

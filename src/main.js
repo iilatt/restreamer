@@ -4,6 +4,7 @@ import { spawn } from 'child_process';
 import { App } from 'uWebSockets.js';
 import { get_web_files } from './web.js';
 import { websockets, on_ws_upgrade, on_ws_open, on_ws_message, on_ws_close } from './ws.js';
+import { init_chats } from './chat.js';
 import stream from 'stream';
 
 function load_optional_file(file_name) {
@@ -52,6 +53,7 @@ app.listen(HTTP_PORT, (listen_socket) => {
 });
 
 export const lives = {};
+export const chats = [];
 
 class MP4AtomFinder extends Transform {
 	constructor() {
@@ -125,35 +127,35 @@ function start_stream(stream_url) {
 		'-filter_complex', '[0:v]split=5[in1][in2][in3][in4][in5];[in1]fps=60[1080p];[in2]scale=1280:720,fps=60[720p];[in3]scale=854:480,fps=30[480p];[in4]scale=640:360,fps=30[360p];[in5]scale=284:160,fps=30[160p];[0:a]asplit=5[a1][a2][a3][a4][a5]',
 		// 1080p output
 		'-map', '[1080p]', '-map', '[a1]',
-		'-c:v', 'libx264', '-preset', 'ultrafast', '-g', '240',
+		'-c:v', 'libx264', '-preset', 'veryfast', '-g', '120',
 		'-profile:v', 'high', '-level', '4.0',
-		'-c:a', 'aac', '-b:a', '128k',
+		'-b:v', '9000k', '-c:a', 'aac', '-b:a', '128k',
 		'-movflags', 'frag_keyframe+empty_moov+default_base_moof',
 		'-f', 'mp4', 'pipe:1',
 		// 720p output
 		'-map', '[720p]', '-map', '[a2]',
-		'-c:v', 'libx264', '-preset', 'ultrafast', '-g', '240',
+		'-c:v', 'libx264', '-preset', 'veryfast', '-g', '120',
 		'-profile:v', 'main', '-level', '3.1',
 		'-b:v', '6000k', '-c:a', 'aac', '-b:a', '128k',
 		'-movflags', 'frag_keyframe+empty_moov+default_base_moof',
 		'-f', 'mp4', 'pipe:3',
 		// 480p output
 		'-map', '[480p]', '-map', '[a3]',
-		'-c:v', 'libx264', '-preset', 'ultrafast', '-g', '120',
+		'-c:v', 'libx264', '-preset', 'veryfast', '-g', '60',
 		'-profile:v', 'main', '-level', '3.0',
 		'-b:v', '3000k', '-c:a', 'aac', '-b:a', '96k',
 		'-movflags', 'frag_keyframe+empty_moov+default_base_moof',
 		'-f', 'mp4', 'pipe:4',
 		// 360p output
 		'-map', '[360p]', '-map', '[a4]',
-		'-c:v', 'libx264', '-preset', 'ultrafast', '-g', '120',
+		'-c:v', 'libx264', '-preset', 'veryfast', '-g', '60',
 		'-profile:v', 'baseline', '-level', '3.0',
 		'-b:v', '1200k', '-c:a', 'aac', '-b:a', '64k',
 		'-movflags', 'frag_keyframe+empty_moov+default_base_moof',
 		'-f', 'mp4', 'pipe:5',
 		// 160p output
 		'-map', '[160p]', '-map', '[a5]',
-		'-c:v', 'libx264', '-preset', 'ultrafast', '-g', '120',
+		'-c:v', 'libx264', '-preset', 'veryfast', '-g', '60',
 		'-profile:v', 'baseline', '-level', '2.1',
 		'-b:v', '300k', '-c:a', 'aac', '-b:a', '48k',
 		'-movflags', 'frag_keyframe+empty_moov+default_base_moof',
@@ -234,6 +236,7 @@ setInterval(() => {
 		type: 'user_count',
 		count: websockets.length
 	}), false);
-}, 10000);
+}, 20000);
 
 start_stream(config.stream_url);
+init_chats(config.chat_modes);

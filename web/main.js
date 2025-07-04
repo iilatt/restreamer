@@ -84,7 +84,7 @@ function make_bookmark_link(target_host, target_name, storage_name, cookie_name)
 function make_discon_modal() {
 	const modal = make_modal('discon', false);
 	const foo1 = elem_create_html(`<span class="modal-title">Disconnected</span>`);
-	const foo2 = elem_create_html(`<button>Reload</button>`);
+	const foo2 = elem_create_html(`<button id="reload-button">Reload</button>`);
 	foo2.addEventListener('click', () => {
 		location.reload();
 	});
@@ -136,20 +136,20 @@ function add_chat_modes(modes) {
 		const mode = modes[a];
 		const elem = elem_create_html(`<button class="chat-mode wide">${mode.name}</button>`);
 		const set_mode = () => {
-			if (!chat_ready) {
-				return;
-			}
 			mode_elems.forEach(old_mode_elem => {
 				old_mode_elem.classList.remove('active');
 			});
 			elem.classList.add('active');
-			set_chat_mode(mode.platform, mode.target, mode.encrypt);
+			ws.send(JSON.stringify({
+				type: 'set_chat',
+				value: a,
+			}));
 		};
 		mode_elems.push(elem);
 		elem.addEventListener('click', () => {
 			set_mode();
 		});
-		if (a === 0) {
+		if (a == 0) {
 			set_mode();
 		}
 		elem_append(query('#live-chat-modes'), elem);
@@ -157,7 +157,7 @@ function add_chat_modes(modes) {
 }
 
 function main() {
-	console.log('ReStreamer v0.1');
+	console.log('ReStreamer v0.2');
 	const hash_params = new URLSearchParams(window.location.hash.substring(1));
 	const twtv_token = hash_params.get('twtv_token');
 	if (twtv_token) {
@@ -172,12 +172,18 @@ function main() {
 	ws.onmessage = event => {
 		if (typeof(event.data) === 'string') {
 			const json = JSON.parse(event.data);
-			if (json.type == 'live_reset') {
+			if (json.type == 'live_init') {
 				player_reset();
 			} else if (json.type === 'user_count') {
 				update_viewer_count(json.count);
 			} else if (json.type === 'chat_modes') {
 				add_chat_modes(json.modes);
+			} else if (json.type === 'chat_init') {
+				set_chat_mode(json.platform, json.history, json.target, json.encrypt);
+			} else if (json.type === 'twtv_chat') {
+				on_twitch_message(json.data);
+			} else if (json.type === 'kick_chat') {
+				on_kick_message(json.data);
 			}
 		} else {
 			event.data.arrayBuffer().then(ab => {
