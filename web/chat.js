@@ -178,9 +178,9 @@ async function get_seventv(platform, platform_id) {
 		});
 	});
 	for (const history_msg_data of chat_history) {
-		if (platform === 'twtv') {
+		if (chat_platform === 'twtv') {
 			on_twitch_message(history_msg_data);
-		} else if (platform === 'kick') {
+		} else if (chat_platform === 'kick') {
 			on_kick_message(history_msg_data);
 		}
 	}
