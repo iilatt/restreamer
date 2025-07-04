@@ -50,6 +50,9 @@ async function init_twitch_chat(chat, channel_name) {
 			add_chat_message(chat, event.data);
 		}
 	};
+	chat_ws.onclose = () => {
+		init_twitch_chat(chat, channel_name);
+	};
 }
 
 async function init_kick_chat(chat, channel_name) {
@@ -75,6 +78,9 @@ async function init_kick_chat(chat, channel_name) {
 					const msg_data = JSON.parse(json.data);
 					add_chat_message(chat, msg_data);
 				}
+			};
+			chat_ws.onclose = () => {
+				init_kick_chat(chat, channel_name);
 			};
 		}
 	}

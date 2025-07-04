@@ -11,8 +11,7 @@ async function set_live_video_paused(new_paused) {
 	if (new_paused) {
 		live_video.pause();
 	} else {
-		live_video.play();
-		live_video.currentTime = hls.liveSyncPosition;
+		start_hls();
 	}
 }
 

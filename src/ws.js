@@ -1,20 +1,6 @@
-import { is_dev, config, lives, chats } from './main.js';
-import { respond400 } from './req_utils.js';
+import { config, chats } from './main.js';
 
 export const websockets = [];
-
-export function on_ws_upgrade(res, req, context) {
-	res.onAborted(() => {});
-	const ip = is_dev ? 'local' : req.getHeader('cf-connecting-ip');
-	if (!is_dev) {
-		const ws_index = websockets.findIndex(ws => ws.ip === ip);
-		if (ws_index !== -1) {
-			respond400(res, 'too_many');
-			return;
-		}
-	}
-	res.upgrade({ ip: ip }, req.getHeader('sec-websocket-key'), req.getHeader('sec-websocket-protocol'), req.getHeader('sec-websocket-extensions'), context);
-}
 
 export function on_ws_open(ws) {
 	ws.ip = ws.getUserData().ip;
