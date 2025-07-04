@@ -60,9 +60,9 @@ function init_player() {
 					return;
 				}
 				if (player_state === 'pause' || live_video.currentTime + 20 < end) {
-					if (live_video.currentTime + seg_delay / 2 < end) {
+					if (live_video.currentTime + seg_delay < end) {
 						player_state = 'play';
-						live_video.currentTime = end - seg_delay / 2;
+						live_video.currentTime = end - seg_delay;
 						console.log('Player seek to end');
 					}
 					return;
