@@ -20,6 +20,7 @@ const web_files = get_web_files();
 
 export const app = App();
 app.get('/hls/:filename', (res, req) => {
+	res.onAborted(() => {});
 	const filename = req.getParameter(0);
 	if (!filename.match(/^[a-zA-Z0-9_-]+(\.m3u8|\.ts)$/)) {
 		return res.writeStatus('400 Bad Request').end();
@@ -99,7 +100,9 @@ function start_stream(stream_url, quality) {
 		'-i', 'pipe:0',
 		'-c', 'copy',
 		'-f', 'hls',
-		'-hls_flags', 'delete_segments',
+		'-hls_time', '4',
+		'-hls_list_size', '6',
+		'-hls_flags', 'delete_segments+independent_segments',
 		`${hls_dir}/${quality}.m3u8`
 	]);
 	streamlink.stdout.pipe(ffmpeg.stdin);
