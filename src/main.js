@@ -5,7 +5,6 @@ import { App } from 'uWebSockets.js';
 import { get_web_files } from './web.js';
 import { websockets, on_ws_upgrade, on_ws_open, on_ws_message, on_ws_close } from './ws.js';
 import { init_chats } from './chat.js';
-import stream from 'stream';
 
 const hls_dir = 'hls';
 
@@ -25,14 +24,14 @@ app.get('/hls/:filename', (res, req) => {
 	if (!filename.match(/^[a-zA-Z0-9_-]+(\.m3u8|\.ts)$/)) {
 		return res.writeStatus('400 Bad Request').end();
 	}
-	const filePath = path.join(hls_dir, filename);
-	const resolvedPath = path.resolve(filePath);
+	const file_path = path.join(hls_dir, filename);
+	const resolvedPath = path.resolve(file_path);
 	if (!resolvedPath.startsWith(path.resolve(hls_dir))) {
 		return res.writeStatus('403 Forbidden').end();
 	}
 	try {
-		if (fs.existsSync(filePath)) {
-			const data = fs.readFileSync(filePath);
+		if (fs.existsSync(file_path)) {
+			const data = fs.readFileSync(file_path);
 			if (filename.endsWith('.m3u8')) {
 				res.writeHeader('Content-Type', 'application/vnd.apple.mpegurl');
 			} else if (filename.endsWith('.ts')) {
@@ -93,7 +92,6 @@ function start_stream(stream_url, quality) {
 	const streamlink = spawn('streamlink', [
 		'--stdout',
 		`--http-header=Authorization=OAuth ${config.stream_twtv_oauth}`,
-		'--hls-segment-stream-data',
 		stream_url,
 		quality,
 	]);
@@ -101,10 +99,8 @@ function start_stream(stream_url, quality) {
 		'-i', 'pipe:0',
 		'-c', 'copy',
 		'-f', 'hls',
-		'-hls_time', '4',
-		'-hls_list_size', '6',
-		'-hls_flags', 'delete_segments+independent_segments',
-		`hls/${quality}.m3u8`
+		'-hls_flags', 'delete_segments',
+		`${hls_dir}/${quality}.m3u8`
 	]);
 	streamlink.stdout.pipe(ffmpeg.stdin);
 	streamlink.on('error', (err) => {
