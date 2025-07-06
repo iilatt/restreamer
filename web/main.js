@@ -74,6 +74,7 @@ function generate_id(length) {
 }
 
 let ws;
+let recon_attempt = 0;
 let discon_modal;
 let token_modal;
 
@@ -156,18 +157,7 @@ function add_chat_modes(modes) {
 	}
 }
 
-function main() {
-	console.log('ReStreamer v0.2');
-	const hash_params = new URLSearchParams(window.location.hash.substring(1));
-	const twtv_token = hash_params.get('twtv_token');
-	if (twtv_token) {
-		localStorage.twtv_token = twtv_token;
-	}
-	const kick_token = hash_params.get('kick_token');
-	if (kick_token) {
-		localStorage.kick_token = kick_token;
-	}
-	window.history.replaceState({}, '', window.location.pathname);
+function start_ws() {
 	ws = new WebSocket(location.origin.replace('http', 'ws'));
 	ws.onmessage = event => {
 		if (typeof(event.data) === 'string') {
@@ -186,8 +176,30 @@ function main() {
 		}
 	};
 	ws.onclose = () => {
-		discon_modal.show();
+		if (recon_attempt >= 3) {
+			discon_modal.show();
+		} else {
+			recon_attempt += 1;
+			setTimeout(() => {
+				start_ws();
+			}, 5000);
+		}
 	};
+}
+
+function main() {
+	console.log('ReStreamer v0.2');
+	const hash_params = new URLSearchParams(window.location.hash.substring(1));
+	const twtv_token = hash_params.get('twtv_token');
+	if (twtv_token) {
+		localStorage.twtv_token = twtv_token;
+	}
+	const kick_token = hash_params.get('kick_token');
+	if (kick_token) {
+		localStorage.kick_token = kick_token;
+	}
+	window.history.replaceState({}, '', window.location.pathname);
+	start_ws();
 
 	const input_fields = query_all('.input-field');
 	input_fields.forEach(input_field => {

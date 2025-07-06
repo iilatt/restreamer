@@ -99,7 +99,7 @@ app.get('/*', (res, req) => {
 
 app.ws('/', {
 	maxPayloadLength: 1024 * 1024 * 8,
-	idleTimeout: 10,
+	idleTimeout: 0,
 	open: on_ws_open,
 	message: on_ws_message,
 	close: on_ws_close,
