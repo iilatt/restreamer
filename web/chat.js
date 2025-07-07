@@ -197,7 +197,7 @@ function on_twitch_message(msg_data) {
 			text: 'Twitch Badge',
 		}
 	});
-	const content = msg_data.substring(command_end_index + 1).replaceAll('\n', '');
+	const content = msg_data.substring(command_end_index + 1).replaceAll('\r', '').replaceAll('\n', '');
 	const content_html = parse_message_content(content, 'twtv');
 	add_live_message('twtv', tags['display-name'], tags['color'], badges, content_html);
 }

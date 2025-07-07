@@ -132,6 +132,7 @@ function make_token_modal() {
 }
 
 function add_chat_modes(modes) {
+	elem_set_inner_html(query('#live-chat-modes'), '');
 	const mode_elems = [];
 	for (let a = 0; a < modes.length; ++a) {
 		const mode = modes[a];
