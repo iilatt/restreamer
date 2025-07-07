@@ -117,16 +117,17 @@ app.listen(HTTP_PORT, (listen_socket) => {
 
 export const chats = [];
 
-function start_stream(stream_url, quality) {
+function start_stream(platform, stream_url, quality) {
 	function cleanup_processes() {
 		streamlink.kill();
 		ffmpeg.kill();
+		start_stream(platform, stream_url, quality);
 	}
 
-	console.log(`Starting stream for: ${stream_url}`);
+	console.log(`Starting stream for: ${stream_url} ${quality}`);
 	const streamlink = spawn('streamlink', [
 		'--stdout',
-		`--http-header=Authorization=OAuth ${config.stream_twtv_oauth}`,
+		`--http-header=Authorization=OAuth ${config.twtv_oauth}`,
 		'--hls-live-restart',
 		'--hls-segment-stream-data',
 		'--stream-segment-threads', '2',
@@ -140,7 +141,7 @@ function start_stream(stream_url, quality) {
 		'-hls_time', '4',
 		'-hls_list_size', '6',
 		'-hls_flags', 'delete_segments+independent_segments',
-		`${hls_dir}/${quality}.m3u8`
+		`${hls_dir}/${platform}_${quality}.m3u8`
 	]);
 	streamlink.stdout.pipe(ffmpeg.stdin);
 	streamlink.on('error', (err) => {
@@ -171,6 +172,9 @@ setInterval(() => {
 }, 20000);
 
 await init_chats(config.chat_modes);
-for (const quality of config.stream_qualities) {
-	start_stream(config.stream_url, quality);
+for (const quality of config.twtv_qualities) {
+	start_stream('twtv', config.twtv_name, quality);
+}
+for (const quality of config.kick_qualities) {
+	start_stream('kick', config.kick_name, quality);
 }
