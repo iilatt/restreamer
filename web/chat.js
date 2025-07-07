@@ -5,6 +5,7 @@ let chat_platform;
 let chat_history = [];
 let chat_target;
 let chat_encrypt;
+let chat_scrolled;
 let seventv = {};
 
 function make_badge(platform, badge, parent) {
@@ -78,12 +79,6 @@ function make_badge(platform, badge, parent) {
 	elem_append(parent, elem);
 }
 
-function scroll_chat() {
-	setTimeout(() => {
-		live_chat.scrollTop = live_chat.scrollHeight;
-	}, 0);
-}
-
 function add_live_message(platform, user_name_str, user_color_str, badges, content_html_str) {
 	const message = document.createElement('div');
 	message.classList.add('message');
@@ -109,11 +104,7 @@ function add_live_message(platform, user_name_str, user_color_str, badges, conte
 	content_element.classList.add('content');
 	content_element.innerHTML = `: ${content_html_str}`;
 	message.appendChild(content_element);
-	const scrolled = live_chat.scrollTop >= live_chat.scrollHeight - live_chat.clientHeight;
 	live_chat.appendChild(message);
-	if (scrolled) {
-		scroll_chat();
-	}
 }
 
 function parse_message_content(input, platform) {
@@ -213,6 +204,9 @@ function on_twitch_message(msg_data) {
 
 function init_chat() {
 	live_chat = query('#live-chat');
+	live_chat.addEventListener('scroll', () => {
+		chat_scrolled = live_chat.scrollTop < live_chat.scrollHeight - live_chat.clientHeight;
+	});
 	live_chat_input = query('#live-chat-input');
 	const live_chat_emote = query('#live-chat-emote');
 	emote_panel = query('#emote-panel');
@@ -243,6 +237,12 @@ function init_chat() {
 		}));
 		return false;
 	});
+	setInterval(() => {
+		if (chat_scrolled) {
+			return;
+		}
+		live_chat.scrollTop = live_chat.scrollHeight;
+	}, 0);
 }
 
 async function set_chat_mode(platform, history, target_id, encrypt) {
