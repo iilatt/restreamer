@@ -241,6 +241,21 @@ function main() {
 		});
 	});
 
+	const live_modes = query_all('.live-mode');
+	live_modes.forEach(live_mode => {
+		live_mode.set_mode = () => {
+			live_modes.forEach(old_live_mode => {
+				old_live_mode.classList.remove('active');
+			});
+			live_mode.classList.add('active');
+			live_mode_string = live_mode.getAttribute('live-mode-target');
+			start_hls();
+		};
+		live_mode.addEventListener('click', () => {
+			live_mode.set_mode();
+		});
+	});
+
 	discon_modal = make_discon_modal();
 	token_modal = make_token_modal();
 	init_live();

@@ -2,6 +2,11 @@
 	flex-shrink: 0;
 	height: 44px;
 	display: flex; justify-content: space-between; align-items: center;
+
+	.left {
+		height: 100%;
+		display: flex;
+	}
 }
 
 #live-parent {

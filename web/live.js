@@ -2,6 +2,7 @@ let live_video;
 let hls;
 let live_video_start;
 let live_video_pause;
+let live_mode_string = 'twtv';
 
 function update_viewer_count(viewers) {
 	query('#live-viewer-count').innerText = viewers;
@@ -19,7 +20,7 @@ function start_hls() {
 	if (hls) {
 		hls.destroy();
 	}
-	const video_src = `/hls/twtv_${localStorage.live_quality}.m3u8`;
+	const video_src = `/hls/${live_mode_string}_${localStorage.live_quality}.m3u8`;
 	if (Hls.isSupported()) {
 		hls = new Hls();
 		hls.loadSource(video_src);

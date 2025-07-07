@@ -117,12 +117,22 @@ app.listen(HTTP_PORT, (listen_socket) => {
 
 export const chats = [];
 
-function start_stream(platform, stream_url, quality) {
-	function cleanup_processes() {
+function start_stream(platform, channel_name, quality) {
+	let running = true;
+	function cleanup_restart() {
+		if (running) {
+			running = false;
+		} else {
+			return;
+		}
 		streamlink.kill();
 		ffmpeg.kill();
-		start_stream(platform, stream_url, quality);
+		setTimeout(() => {
+			start_stream(platform, channel_name, quality);
+		}, 10000);
 	}
+
+	const stream_url = `${platform === 'twtv' ? 'twitch.tv' : 'kick.com'}/${channel_name}`;
 
 	console.log(`Starting stream for: ${stream_url} ${quality}`);
 	const streamlink = spawn('streamlink', [
@@ -146,21 +156,21 @@ function start_stream(platform, stream_url, quality) {
 	streamlink.stdout.pipe(ffmpeg.stdin);
 	streamlink.on('error', (err) => {
 		console.error('[streamlink] error:', err);
-		cleanup_processes();
+		cleanup_restart();
 	});
 	ffmpeg.on('error', (err) => {
 		console.error('[ffmpeg] error:', err);
-		cleanup_processes();
+		cleanup_restart();
 	});
 	streamlink.stderr.on('data', () => {});
 	ffmpeg.stderr.on('data', () => {});
 	streamlink.on('close', (code) => {
 		console.log(`Streamlink process exited with code ${code}`);
-		cleanup_processes();
+		cleanup_restart();
 	});
 	ffmpeg.on('close', (code) => {
 		console.log(`FFmpeg process exited with code ${code}`);
-		cleanup_processes();
+		cleanup_restart();
 	});
 }
 
