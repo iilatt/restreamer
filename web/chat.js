@@ -205,7 +205,8 @@ function on_twitch_message(msg_data) {
 function init_chat() {
 	live_chat = query('#live-chat');
 	live_chat.addEventListener('scroll', () => {
-		chat_scrolled = live_chat.scrollTop < live_chat.scrollHeight - live_chat.clientHeight;
+		const tolerance = 1;
+		chat_scrolled = live_chat.scrollTop + tolerance <= live_chat.scrollHeight - live_chat.clientHeight;
 	});
 	live_chat_input = query('#live-chat-input');
 	const live_chat_emote = query('#live-chat-emote');
@@ -246,6 +247,7 @@ function init_chat() {
 }
 
 async function set_chat_mode(platform, history, target_id, encrypt) {
+	chat_scrolled = false;
 	chat_platform = platform;
 	chat_history = history;
 	chat_encrypt = encrypt;
